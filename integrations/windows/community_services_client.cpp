@@ -216,7 +216,7 @@ HttpResult CommunityServicesClient::Request(
     parts.dwUrlPathLength = static_cast<DWORD>(-1);
     parts.dwExtraInfoLength = static_cast<DWORD>(-1);
 
-    if (!WinHttpCrackUrl(baseUrl_.c_str(), 0, &parts)) return Failure(GetLastError());
+    if (!WinHttpCrackUrl(baseUrl_.c_str(), 0, 0, &parts)) return Failure(GetLastError());
     if (!parts.lpszHostName || parts.dwHostNameLength == 0) return Failure(ERROR_INVALID_PARAMETER);
 
     const std::wstring host(parts.lpszHostName, parts.dwHostNameLength);
