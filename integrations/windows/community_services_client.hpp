@@ -37,14 +37,26 @@ public:
     HttpResult Friends(const std::string& accessToken) const;
     HttpResult FriendRequests(const std::string& accessToken, bool incoming = true) const;
     HttpResult SendFriendRequest(const std::string& accessToken, const std::string& targetUserId) const;
+    HttpResult CancelFriendRequest(const std::string& accessToken, const std::string& targetUserId) const;
     HttpResult AcceptFriendRequest(const std::string& accessToken, const std::string& targetUserId) const;
     HttpResult RemoveFriend(const std::string& accessToken, const std::string& targetUserId) const;
     HttpResult Heartbeat(const std::string& accessToken, bool away = false) const;
+    HttpResult PresenceDirectory(const std::string& accessToken) const;
     HttpResult PublicSessions(const std::string& accessToken) const;
+    HttpResult CreateSession(
+        const std::string& accessToken,
+        const std::string& name,
+        const std::string& region,
+        const std::string& gameMode,
+        int maxPlayers = 16) const;
+    HttpResult JoinSession(const std::string& accessToken, const std::string& sessionId) const;
+    HttpResult LeaveSession(const std::string& accessToken, const std::string& sessionId) const;
     HttpResult QueueMatchmaking(
         const std::string& accessToken,
         const std::string& gameMode,
         const std::string& region) const;
+    HttpResult MatchmakingStatus(const std::string& accessToken) const;
+    HttpResult CancelMatchmaking(const std::string& accessToken) const;
 
 private:
     std::wstring baseUrl_;
