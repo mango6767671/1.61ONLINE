@@ -13,6 +13,7 @@ import sessionRoutes from "./routes/sessions.js";
 import matchmakingRoutes from "./routes/matchmaking.js";
 import clientRoutes from "./routes/client.js";
 import socialRoutes from "./routes/social.js";
+import discordIntegrationRoutes from "./routes/discord-integration.js";
 
 declare module "@fastify/jwt" {
   interface FastifyJWT {
@@ -76,6 +77,26 @@ export async function buildApp() {
     }
   });
 
+  app.addHook("preHandler", async (request, reply) => {
+    if (!request.url.startsWith("/v1/")) return;
+    if (request.url.startsWith("/v1/integrations/discord/") || request.url === "/v1/client/bootstrap") return;
+    try {
+      const result = await pool.query<{ setting_value: { enabled?: boolean; reason?: string | null } }>(
+        "SELECT setting_value FROM community_settings WHERE setting_key = 'maintenance'"
+      );
+      const maintenance = result.rows[0]?.setting_value;
+      if (maintenance?.enabled === true) {
+        await reply.code(503).send({
+          error: "maintenance_mode",
+          message: maintenance.reason || "Community services are temporarily unavailable for maintenance."
+        });
+      }
+    } catch (error) {
+      request.log.error({ err: error }, "Maintenance state check failed");
+      await reply.code(503).send({ error: "service_state_unavailable" });
+    }
+  });
+
   await app.register(healthRoutes, { prefix: "/health" });
   await app.register(authRoutes, { prefix: "/v1/auth" });
   await app.register(playerRoutes, { prefix: "/v1/player" });
@@ -84,6 +105,7 @@ export async function buildApp() {
   await app.register(matchmakingRoutes, { prefix: "/v1/matchmaking" });
   await app.register(clientRoutes, { prefix: "/v1/client" });
   await app.register(socialRoutes, { prefix: "/v1/social" });
+  await app.register(discordIntegrationRoutes, { prefix: "/v1/integrations/discord" });
 
   app.get("/", async () => ({
     service: "community-online-backend",
