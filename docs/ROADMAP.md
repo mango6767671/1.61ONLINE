@@ -18,7 +18,7 @@ This roadmap describes current implementation state and planned work.
 - [x] Unified authenticated account/profile/presence snapshot
 - [x] Community player search and friend-request/friendship API
 - [x] Database-backed friend graph workflow tests
-- [ ] Refresh-token rotation and session revocation
+- [x] Rotating refresh tokens, logout, and server-side access-session revocation
 - [ ] Email verification and account recovery design
 - [ ] Full player profile persistence and account lifecycle tests
 - [ ] Server-authoritative inventory and progression models
