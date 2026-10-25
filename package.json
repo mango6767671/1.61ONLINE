@@ -13,7 +13,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:migrate": "tsx scripts/migrate.ts"
+    "db:migrate": "tsx scripts/migrate.ts",
+    "bot:dev": "tsx watch bot/index.ts",
+    "bot:start": "node dist/bot/index.js"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.2",
@@ -21,6 +23,7 @@
     "@fastify/jwt": "^9.1.0",
     "@fastify/rate-limit": "^10.2.1",
     "argon2": "^0.41.1",
+    "discord.js": "^14.22.1",
     "dotenv": "^16.4.7",
     "fastify": "^5.2.1",
     "pg": "^8.13.1",
