@@ -61,6 +61,7 @@ export const communityApi = {
   removeAnnouncement: (announcementId: string, data: unknown) => request<Record<string, any>>("DELETE", `/announcements/${encodeURIComponent(announcementId)}`, data),
   setMaintenance: (data: unknown) => request<Record<string, any>>("PUT", "/maintenance", data),
   audit: (limit = 25) => request<Record<string, any>>("GET", `/audit?limit=${limit}`),
+  recordAudit: (data: unknown) => request<Record<string, any>>("POST", "/audit", data),
   createTicket: (data: unknown) => request<Record<string, any>>("POST", "/tickets", data),
   linkTicketChannel: (ticketId: string, channelId: string) => request<Record<string, any>>("PUT", `/tickets/${encodeURIComponent(ticketId)}/channel`, { channelId }),
   ticketByChannel: (channelId: string) => request<Record<string, any>>("GET", `/tickets/by-channel/${encodeURIComponent(channelId)}`),
