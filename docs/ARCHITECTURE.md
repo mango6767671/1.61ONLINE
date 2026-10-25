@@ -14,6 +14,8 @@ This repository is an independent community service implementation. It must not 
 - **Abuse controls:** security headers, configured CORS, and request rate limiting.
 - **Client facade:** `GET /v1/client/bootstrap` publishes a versioned community contract and truthful capability manifest; `GET /v1/client/account` returns the caller's account/profile/presence snapshot.
 - **Community social graph:** searchable display names, friend requests, accepted friendships, and current-presence hints.
+- **Discord management bot:** separate discord.js process with slash commands, Discord-native signup, reports, suggestions, private tickets, announcements, staff controls, moderation bans, maintenance mode, and audit trail.
+- **Private bot API:** /v1/integrations/discord, protected with the separate DISCORD_BOT_API_KEY and not intended for untrusted client applications.
 
 ## Service boundaries
 
@@ -25,6 +27,7 @@ This repository is an independent community service implementation. It must not 
 6. Real-time game-session transport.
 7. Mission/activity orchestration.
 8. Telemetry, moderation, and administration.
+9. Discord automation and community operations.
 
 The client contract is deliberately not wire-compatible with private Rockstar Social Club APIs. A client adapter must intentionally target the community endpoints using interfaces and source that the project is authorized to modify. The client contract does not change entitlement status or authorize use of proprietary services.
 
