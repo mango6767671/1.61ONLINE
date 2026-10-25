@@ -4,6 +4,7 @@ import helmet from "@fastify/helmet";
 import jwt from "@fastify/jwt";
 import rateLimit from "@fastify/rate-limit";
 import { env } from "./config/env.js";
+import { pool } from "./db/pool.js";
 import healthRoutes from "./routes/health.js";
 import authRoutes from "./routes/auth.js";
 import playerRoutes from "./routes/player.js";
@@ -39,6 +40,27 @@ export async function buildApp() {
       await request.jwtVerify();
     } catch {
       await reply.code(401).send({ error: "unauthorized" });
+      return;
+    }
+
+    const sessionId = (request.user as { sid?: unknown }).sid;
+    // Tokens issued before session-backed auth may remain valid until their
+    // short access-token expiry; all new tokens carry a session ID.
+    if (typeof sessionId !== "string") return;
+
+    try {
+      const active = await pool.query(
+        `SELECT 1 FROM auth_sessions
+         WHERE id = $1 AND user_id = $2
+           AND revoked_at IS NULL AND expires_at > NOW()`,
+        [sessionId, request.user.sub]
+      );
+      if (!active.rowCount) {
+        await reply.code(401).send({ error: "unauthorized" });
+      }
+    } catch (error) {
+      request.log.error({ err: error }, "Authentication session validation failed");
+      await reply.code(503).send({ error: "session_validation_unavailable" });
     }
   });
 
