@@ -16,8 +16,8 @@ import socialRoutes from "./routes/social.js";
 
 declare module "@fastify/jwt" {
   interface FastifyJWT {
-    payload: { sub: string; email: string; sid?: string };
-    user: { sub: string; email: string; sid?: string };
+    payload: { sub: string; email?: string | null; sid?: string };
+    user: { sub: string; email?: string | null; sid?: string };
   }
 }
 
@@ -50,24 +50,29 @@ export async function buildApp() {
       return;
     }
 
-    const sessionId = (request.user as { sid?: unknown }).sid;
-    // Tokens issued before session-backed auth may remain valid until their
-    // short access-token expiry; all new tokens carry a session ID.
-    if (typeof sessionId !== "string") return;
-
     try {
-      const active = await pool.query(
-        `SELECT 1 FROM auth_sessions
-         WHERE id = $1 AND user_id = $2
-           AND revoked_at IS NULL AND expires_at > NOW()`,
-        [sessionId, request.user.sub]
+      const sessionId = request.user.sid;
+      if (typeof sessionId === "string") {
+        const active = await pool.query(
+          "SELECT 1 FROM auth_sessions WHERE id = $1 AND user_id = $2 AND revoked_at IS NULL AND expires_at > NOW()",
+          [sessionId, request.user.sub]
+        );
+        if (!active.rowCount) {
+          await reply.code(401).send({ error: "unauthorized" });
+          return;
+        }
+      }
+
+      const ban = await pool.query(
+        "SELECT 1 FROM community_bans WHERE user_id = $1 AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at > NOW()) LIMIT 1",
+        [request.user.sub]
       );
-      if (!active.rowCount) {
-        await reply.code(401).send({ error: "unauthorized" });
+      if (ban.rowCount) {
+        await reply.code(403).send({ error: "account_suspended" });
       }
     } catch (error) {
-      request.log.error({ err: error }, "Authentication session validation failed");
-      await reply.code(503).send({ error: "session_validation_unavailable" });
+      request.log.error({ err: error }, "Authentication state validation failed");
+      await reply.code(503).send({ error: "authentication_state_unavailable" });
     }
   });
 
