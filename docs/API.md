@@ -34,9 +34,21 @@ Passwords must be 12–128 characters. Email addresses are normalized to lowerca
 
 Accepts the same email/password fields. Returns a 15-minute bearer access token. Invalid credentials return the same `401` response regardless of whether the email exists.
 
+### POST /v1/auth/refresh
+
+Accepts `{"refreshToken":"<refreshToken>"}`. A valid refresh token is rotated atomically: the submitted token is revoked and a new access/refresh pair is returned. Refresh tokens expire after 30 days. Reuse of a previously rotated token revokes the account's remaining active refresh sessions.
+
+### POST /v1/auth/logout
+
+Accepts the current refresh token and revokes its session. The response is idempotent and does not disclose whether a token existed. Its bound access token is rejected immediately by authenticated API routes.
+
+### POST /v1/auth/logout-all
+
+Requires a bearer access token and revokes all active refresh sessions for that account. Authenticated requests tied to revoked sessions are rejected immediately.
+
 ### GET /v1/auth/me
 
-Returns the authenticated account.
+Returns the authenticated account. Access tokens last 15 minutes. Clients should securely store the refresh token, use the refresh endpoint before access-token expiry, and never log credentials or tokens.
 
 ## Client account facade
 
