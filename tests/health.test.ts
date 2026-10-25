@@ -25,8 +25,30 @@ describe("HTTP API", () => {
     expect(response.json().apiVersion).toBe("v1");
   });
 
+  it("publishes the community client contract without claiming unsupported capabilities", async () => {
+    const response = await app!.inject({ method: "GET", url: "/v1/client/bootstrap" });
+    const body = response.json();
+
+    expect(response.statusCode).toBe(200);
+    expect(body.contract).toEqual({
+      id: "community-client-services",
+      version: 1,
+      apiBasePath: "/v1",
+      authentication: "bearer-access-token"
+    });
+    expect(body.capabilities.friendsAndRequests).toBe(true);
+    expect(body.capabilities.automaticMatchmaking).toBe(false);
+    expect(body.capabilities.realtimeGameplayTransport).toBe(false);
+    expect(body.product.serviceOwner).toBe("community");
+  });
+
   it("rejects unauthenticated player requests", async () => {
     const response = await app!.inject({ method: "GET", url: "/v1/player/profile" });
+    expect(response.statusCode).toBe(401);
+  });
+
+  it("rejects unauthenticated social requests", async () => {
+    const response = await app!.inject({ method: "GET", url: "/v1/social/friends" });
     expect(response.statusCode).toBe(401);
   });
 });
