@@ -38,7 +38,7 @@ This roadmap describes current implementation state and planned work.
 
 - [x] Documented community HTTP contract and current limitations
 - [x] Reference Windows/WinHTTP adapter source and CMake build target
-- [ ] Confirm Windows CI build passes before calling the native adapter verified
+- [x] Compile the reference adapter with MSVC on Windows CI
 - [ ] Implement and test the authorized client-side adapter in the target project
 - [ ] Documented client/server message schemas and real-time transport
 - [ ] Server-authoritative session state
