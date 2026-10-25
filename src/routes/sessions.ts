@@ -64,6 +64,7 @@ const sessionRoutes: FastifyPluginAsync = async (app) => {
       );
       const session = created.rows[0];
       await client.query("INSERT INTO session_members (session_id, user_id) VALUES ($1, $2)", [session.id, request.user.sub]);
+      await client.query("DELETE FROM matchmaking_queue WHERE user_id = $1", [request.user.sub]);
       await client.query(
         `INSERT INTO player_presence (user_id, status, session_id, last_seen_at, updated_at)
          VALUES ($1, 'in_session', $2, NOW(), NOW())
@@ -74,6 +75,7 @@ const sessionRoutes: FastifyPluginAsync = async (app) => {
       return reply.code(201).send({ session: { ...session, playerCount: 1 } });
     } catch (error) {
       await client.query("ROLLBACK");
+      if (isUniqueViolation(error)) return reply.code(409).send({ error: "already_in_session" });
       request.log.error({ err: error }, "Session creation failed");
       return reply.code(500).send({ error: "internal_error" });
     } finally {
@@ -117,6 +119,7 @@ const sessionRoutes: FastifyPluginAsync = async (app) => {
       }
 
       await client.query("INSERT INTO session_members (session_id, user_id) VALUES ($1, $2)", [session.id, request.user.sub]);
+      await client.query("DELETE FROM matchmaking_queue WHERE user_id = $1", [request.user.sub]);
       await client.query(
         `INSERT INTO player_presence (user_id, status, session_id, last_seen_at, updated_at)
          VALUES ($1, 'in_session', $2, NOW(), NOW())
