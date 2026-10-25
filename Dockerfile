@@ -4,6 +4,7 @@ COPY package.json ./
 RUN npm install
 COPY tsconfig.json ./
 COPY src ./src
+COPY bot ./bot
 COPY scripts ./scripts
 COPY migrations ./migrations
 RUN npm run build
