@@ -56,14 +56,14 @@ const authRoutes: FastifyPluginAsync = async (app) => {
 
     try {
       const { email, password } = parsed.data;
-      const result = await pool.query<{ id: string; email: string; password_hash: string }>(
+      const result = await pool.query<{ id: string; email: string | null; password_hash: string | null }>(
         "SELECT id, email, password_hash FROM users WHERE email = $1",
         [email]
       );
       const user = result.rows[0];
-      const valid = user ? await argon2.verify(user.password_hash, password) : false;
+      const valid = user?.password_hash ? await argon2.verify(user.password_hash, password) : false;
 
-      if (!user || !valid) return reply.code(401).send({ error: "invalid_credentials" });
+      if (!user || !user.email || !user.password_hash || !valid) return reply.code(401).send({ error: "invalid_credentials" });
 
       const client = await pool.connect();
       try {
@@ -180,7 +180,7 @@ const authRoutes: FastifyPluginAsync = async (app) => {
   });
 
   app.get("/me", { preHandler: [app.authenticate] }, async (request, reply) => {
-    const result = await pool.query<{ id: string; email: string; created_at: Date }>(
+    const result = await pool.query<{ id: string; email: string | null; created_at: Date }>(
       "SELECT id, email, created_at FROM users WHERE id = $1",
       [request.user.sub]
     );
@@ -191,7 +191,7 @@ const authRoutes: FastifyPluginAsync = async (app) => {
 };
 
 function authResponse(
-  user: { id: string; email: string },
+  user: { id: string; email: string | null },
   tokens: {
     accessToken: string;
     refreshToken: string;
