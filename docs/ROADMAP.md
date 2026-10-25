@@ -22,14 +22,14 @@ This roadmap describes intended work, not implemented features.
 
 ## Phase 2 — Presence and sessions
 
-- [ ] Presence service with explicit online/offline lifecycle
-- [ ] Session directory and heartbeat/expiry rules
-- [ ] Lobby model and matchmaking queue design
+- [x] Basic HTTP presence heartbeat and active-player listing\n- [ ] Presence service with robust online/offline lifecycle and lease cleanup
+- [x] Session creation, discovery, join, leave, and capacity checks\n- [ ] Session directory with expiry cleanup and owner controls
+- [x] Persistent lobby/session model and matchmaking queue API\n- [ ] Matchmaking worker that groups players and assigns sessions
 - [ ] Abuse controls and load tests
 
 ## Phase 3 — Real-time gameplay services
 
-- [ ] Documented client/server message schemas
+- [ ] Documented client/server message schemas and real-time transport
 - [ ] Server-authoritative session state
 - [ ] Reconnection and timeout behavior
 - [ ] Mission/activity lifecycle
