@@ -65,6 +65,12 @@ const authRoutes: FastifyPluginAsync = async (app) => {
 
       if (!user || !user.email || !user.password_hash || !valid) return reply.code(401).send({ error: "invalid_credentials" });
 
+      const activeBan = await pool.query(
+        "SELECT 1 FROM community_bans WHERE user_id = $1 AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at > NOW()) LIMIT 1",
+        [user.id]
+      );
+      if (activeBan.rowCount) return reply.code(403).send({ error: "account_suspended" });
+
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
