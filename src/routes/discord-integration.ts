@@ -74,6 +74,7 @@ const integrationRoutes: FastifyPluginAsync = async (app) => {
       open_reports: number;
       open_tickets: number;
       pending_suggestions: number;
+      active_warnings: number;
     }>(
       "SELECT (SELECT COUNT(*)::int FROM users) AS accounts, " +
       "(SELECT COUNT(*)::int FROM player_presence WHERE last_seen_at > NOW() - INTERVAL '90 seconds') AS active_players, " +
@@ -82,7 +83,8 @@ const integrationRoutes: FastifyPluginAsync = async (app) => {
       "(SELECT COUNT(*)::int FROM community_bans WHERE revoked_at IS NULL AND (expires_at IS NULL OR expires_at > NOW())) AS active_bans, " +
       "(SELECT COUNT(*)::int FROM community_reports WHERE status = 'open') AS open_reports, " +
       "(SELECT COUNT(*)::int FROM community_tickets WHERE status = 'open') AS open_tickets, " +
-      "(SELECT COUNT(*)::int FROM community_suggestions WHERE status = 'pending') AS pending_suggestions"
+      "(SELECT COUNT(*)::int FROM community_suggestions WHERE status = 'pending') AS pending_suggestions, " +
+      "(SELECT COUNT(*)::int FROM community_warnings WHERE cleared_at IS NULL) AS active_warnings"
     );
     const maintenance = await getMaintenance();
     return {
@@ -386,6 +388,45 @@ const integrationRoutes: FastifyPluginAsync = async (app) => {
     if (!parsed.success) return reply.code(400).send({ error: "invalid_request" });
     await writeAudit(parsed.data.actorDiscordId, parsed.data.actorUsername, parsed.data.action, parsed.data.targetDiscordId, parsed.data.details);
     return reply.code(201).send({ recorded: true });
+  });
+
+  app.post("/warnings", async (request, reply) => {
+    const parsed = actorSchema.extend({
+      targetDiscordId: snowflake,
+      targetUsername: z.string().trim().min(1).max(100),
+      reason: z.string().trim().min(3).max(500)
+    }).strict().safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: "invalid_request" });
+    const result = await pool.query<{ id: string; created_at: Date }>(
+      "INSERT INTO community_warnings (target_discord_id, target_username, issued_by_discord_id, issued_by_username, reason) VALUES ($1, $2, $3, $4, $5) RETURNING id, created_at",
+      [parsed.data.targetDiscordId, parsed.data.targetUsername, parsed.data.actorDiscordId, parsed.data.actorUsername, parsed.data.reason]
+    );
+    await writeAudit(parsed.data.actorDiscordId, parsed.data.actorUsername, "discord.warning.create", parsed.data.targetDiscordId, { warningId: result.rows[0]!.id, reason: parsed.data.reason });
+    return reply.code(201).send({ warning: { id: result.rows[0]!.id, targetDiscordId: parsed.data.targetDiscordId, reason: parsed.data.reason, createdAt: result.rows[0]!.created_at } });
+  });
+
+  app.get("/warnings/:discordUserId", async (request, reply) => {
+    const params = z.object({ discordUserId: snowflake }).safeParse(request.params);
+    if (!params.success) return reply.code(400).send({ error: "invalid_discord_user_id" });
+    const result = await pool.query(
+      "SELECT id, target_discord_id AS \"targetDiscordId\", target_username AS \"targetUsername\", issued_by_discord_id AS \"issuedByDiscordId\", issued_by_username AS \"issuedByUsername\", reason, created_at AS \"createdAt\", cleared_at AS \"clearedAt\" FROM community_warnings WHERE target_discord_id = $1 ORDER BY created_at DESC LIMIT 50",
+      [params.data.discordUserId]
+    );
+    return { warnings: result.rows };
+  });
+
+  app.delete("/warnings/:discordUserId", async (request, reply) => {
+    const params = z.object({ discordUserId: snowflake }).safeParse(request.params);
+    const parsed = actorSchema.safeParse(request.body);
+    if (!params.success) return reply.code(400).send({ error: "invalid_discord_user_id" });
+    if (!parsed.success) return reply.code(400).send({ error: "invalid_request" });
+    const result = await pool.query(
+      "UPDATE community_warnings SET cleared_at = NOW(), cleared_by_discord_id = $2 WHERE target_discord_id = $1 AND cleared_at IS NULL RETURNING id",
+      [params.data.discordUserId, parsed.data.actorDiscordId]
+    );
+    if (!result.rowCount) return reply.code(404).send({ error: "active_warnings_not_found" });
+    await writeAudit(parsed.data.actorDiscordId, parsed.data.actorUsername, "discord.warning.clear", params.data.discordUserId, { clearedWarningIds: result.rows.map((row: { id: string }) => row.id) });
+    return { cleared: true, count: result.rowCount ?? 0 };
   });
 
   app.get("/audit", async (request, reply) => {
