@@ -13,6 +13,18 @@ import { botConfig } from "./config.js";
 import { CommunityApiError, communityApi } from "./api.js";
 
 const simple = (name: string, description: string) => new SlashCommandBuilder().setName(name).setDescription(description);
+const mod = simple("mod", "Discord server moderation tools")
+  .addSubcommand(s => s.setName("timeout").setDescription("Timeout a member").addUserOption(o => o.setName("user").setDescription("Member").setRequired(true)).addIntegerOption(o => o.setName("minutes").setDescription("Duration, up to 28 days").setMinValue(1).setMaxValue(40320).setRequired(true)).addStringOption(o => o.setName("reason").setDescription("Reason").setMaxLength(500).setRequired(true)))
+  .addSubcommand(s => s.setName("kick").setDescription("Kick a member from Discord").addUserOption(o => o.setName("user").setDescription("Member").setRequired(true)).addStringOption(o => o.setName("reason").setDescription("Reason").setMaxLength(500).setRequired(true)))
+  .addSubcommand(s => s.setName("ban").setDescription("Ban a member from Discord").addUserOption(o => o.setName("user").setDescription("Member").setRequired(true)).addStringOption(o => o.setName("reason").setDescription("Reason").setMaxLength(500).setRequired(true)))
+  .addSubcommand(s => s.setName("unban").setDescription("Unban a Discord account by ID").addStringOption(o => o.setName("user_id").setDescription("17–20 digit Discord ID").setMinLength(17).setMaxLength(20).setRequired(true)).addStringOption(o => o.setName("reason").setDescription("Reason").setMaxLength(500).setRequired(true)))
+  .addSubcommand(s => s.setName("warn").setDescription("Issue a persistent community warning").addUserOption(o => o.setName("user").setDescription("Member").setRequired(true)).addStringOption(o => o.setName("reason").setDescription("Reason").setMaxLength(500).setRequired(true)))
+  .addSubcommand(s => s.setName("warnings").setDescription("Review a member's warning history").addUserOption(o => o.setName("user").setDescription("Member").setRequired(true)))
+  .addSubcommand(s => s.setName("clear-warnings").setDescription("Clear active warnings").addUserOption(o => o.setName("user").setDescription("Member").setRequired(true)))
+  .addSubcommand(s => s.setName("purge").setDescription("Delete recent messages here").addIntegerOption(o => o.setName("amount").setDescription("Number of messages, 2–100").setMinValue(2).setMaxValue(100).setRequired(true)))
+  .addSubcommand(s => s.setName("lock").setDescription("Prevent @everyone from sending messages here"))
+  .addSubcommand(s => s.setName("unlock").setDescription("Restore inherited @everyone send permissions here"));
+
 const admin = simple("admin", "Community staff tools")
   .addSubcommand(s => s.setName("stats").setDescription("Backend and community statistics"))
   .addSubcommand(s => s.setName("player").setDescription("Inspect a Discord-linked player").addUserOption(o => o.setName("user").setDescription("Player").setRequired(true)))
@@ -48,7 +60,8 @@ export const commands = [
   new SlashCommandBuilder().setName("ticket").setDescription("Private support tickets")
     .addSubcommand(s => s.setName("create").setDescription("Open a private support channel").addStringOption(o => o.setName("topic").setDescription("What do you need help with?").setMinLength(3).setMaxLength(120).setRequired(true)))
     .addSubcommand(s => s.setName("close").setDescription("Close the ticket in this channel").addStringOption(o => o.setName("reason").setDescription("Optional closing note").setMaxLength(500))),
-  admin
+  admin,
+  mod
 ];
 
 function actor(i: ChatInputCommandInteraction) {
@@ -84,8 +97,13 @@ async function hasModerator(i: ChatInputCommandInteraction): Promise<boolean> {
   const m = await i.guild.members.fetch(i.user.id);
   return m.permissions.has(PermissionFlagsBits.Administrator) ||
     botConfig.adminRoleIds.some(id => m.roles.cache.has(id)) ||
-    botConfig.moderatorRoleIds.some(id => m.roles.cache.has(id)) ||
-    m.permissions.has(PermissionFlagsBits.ManageMessages);
+    botConfig.moderatorRoleIds.some(id => m.roles.cache.has(id));
+}
+
+async function requireModerator(i: ChatInputCommandInteraction): Promise<boolean> {
+  if (await hasModerator(i)) return true;
+  await i.reply({content:"A configured community moderator/admin role is required for this command.", flags:MessageFlags.Ephemeral});
+  return false;
 }
 
 async function requireAdmin(i: ChatInputCommandInteraction): Promise<boolean> {
@@ -302,6 +320,107 @@ async function handleAdmin(i: ChatInputCommandInteraction, client: Client): Prom
   }
 }
 
+async function handleMod(i: ChatInputCommandInteraction, client: Client): Promise<void> {
+  if (!(await requireModerator(i))) return;
+  if (!i.guild) { await i.reply({content:"This command is server-only.",flags:MessageFlags.Ephemeral}); return; }
+  const guild = i.guild;
+  const sub = i.options.getSubcommand();
+  const a = actor(i);
+
+  if (sub === "timeout") {
+    await i.deferReply({flags:MessageFlags.Ephemeral});
+    const target = i.options.getUser("user",true);
+    const minutes = i.options.getInteger("minutes",true);
+    const reason = i.options.getString("reason",true);
+    if (target.id === i.user.id || target.id === client.user?.id) { await i.editReply("You cannot timeout yourself or the bot."); return; }
+    const member = await guild.members.fetch(target.id);
+    await member.timeout(minutes * 60_000, reason);
+    await communityApi.recordAudit({...a,action:"discord.member.timeout",targetDiscordId:target.id,details:{minutes,reason}}).catch(()=>undefined);
+    await logToChannel(client,new EmbedBuilder().setTitle("Discord member timed out").setColor(Colors.Orange).addFields({name:"Target",value:"<@"+target.id+">"},{name:"Duration",value:minutes+" minutes"},{name:"Reason",value:text(reason)},{name:"Staff",value:"<@"+i.user.id+">"}).setTimestamp());
+    await i.editReply("Timed out <@"+target.id+"> for "+minutes+" minutes."); return;
+  }
+
+  if (sub === "kick") {
+    await i.deferReply({flags:MessageFlags.Ephemeral});
+    const target = i.options.getUser("user",true); const reason = i.options.getString("reason",true);
+    if (target.id === i.user.id || target.id === client.user?.id) { await i.editReply("You cannot kick yourself or the bot."); return; }
+    const member = await guild.members.fetch(target.id);
+    await member.kick(reason);
+    await communityApi.recordAudit({...a,action:"discord.member.kick",targetDiscordId:target.id,details:{reason}}).catch(()=>undefined);
+    await logToChannel(client,new EmbedBuilder().setTitle("Discord member kicked").setColor(Colors.Red).addFields({name:"Target",value:"<@"+target.id+">"},{name:"Reason",value:text(reason)},{name:"Staff",value:"<@"+i.user.id+">"}).setTimestamp());
+    await i.editReply("Kicked <@"+target.id+"> from Discord. Their community backend account is not automatically banned."); return;
+  }
+
+  if (sub === "ban") {
+    await i.deferReply({flags:MessageFlags.Ephemeral});
+    const target = i.options.getUser("user",true); const reason = i.options.getString("reason",true);
+    if (target.id === i.user.id || target.id === client.user?.id) { await i.editReply("You cannot ban yourself or the bot."); return; }
+    await guild.members.ban(target.id,{reason});
+    await communityApi.recordAudit({...a,action:"discord.member.ban",targetDiscordId:target.id,details:{reason}}).catch(()=>undefined);
+    await logToChannel(client,new EmbedBuilder().setTitle("Discord member banned").setColor(Colors.Red).addFields({name:"Target",value:"<@"+target.id+">"},{name:"Reason",value:text(reason)},{name:"Staff",value:"<@"+i.user.id+">"}).setTimestamp());
+    await i.editReply("Banned <@"+target.id+"> from this Discord server. This is separate from a community-account ban."); return;
+  }
+
+  if (sub === "unban") {
+    await i.deferReply({flags:MessageFlags.Ephemeral});
+    const targetId = i.options.getString("user_id",true); const reason = i.options.getString("reason",true);
+    if (!/^\d{17,20}$/.test(targetId)) { await i.editReply("Enter a valid numeric Discord user ID."); return; }
+    await guild.members.unban(targetId,reason);
+    await communityApi.recordAudit({...a,action:"discord.member.unban",targetDiscordId:targetId,details:{reason}}).catch(()=>undefined);
+    await logToChannel(client,new EmbedBuilder().setTitle("Discord user unbanned").setColor(Colors.Green).addFields({name:"Target ID",value:targetId},{name:"Reason",value:text(reason)},{name:"Staff",value:"<@"+i.user.id+">"}).setTimestamp());
+    await i.editReply("Unbanned Discord user ID "+targetId+"."); return;
+  }
+
+  if (sub === "warn") {
+    await i.deferReply({flags:MessageFlags.Ephemeral});
+    const target = i.options.getUser("user",true); const reason = i.options.getString("reason",true);
+    if (target.id === i.user.id) { await i.editReply("You cannot warn yourself."); return; }
+    const result = await communityApi.addWarning({...a,targetDiscordId:target.id,targetUsername:target.username,reason});
+    const warning = result.warning as Record<string,any>;
+    await target.send("You have received a community warning in "+guild.name+". Reason: "+reason).catch(()=>undefined);
+    await logToChannel(client,new EmbedBuilder().setTitle("Community warning issued").setColor(Colors.Orange).addFields({name:"Member",value:"<@"+target.id+">"},{name:"Warning ID",value:String(warning.id)},{name:"Reason",value:text(reason)},{name:"Staff",value:"<@"+i.user.id+">"}).setTimestamp());
+    await i.editReply("Warning recorded for <@"+target.id+">. Warning ID: "+String(warning.id)+"."); return;
+  }
+
+  if (sub === "warnings") {
+    await i.deferReply({flags:MessageFlags.Ephemeral});
+    const target = i.options.getUser("user",true); const result = await communityApi.warnings(target.id); const warnings = (result.warnings??[]) as Record<string,any>[];
+    const e = new EmbedBuilder().setTitle("Warning history for "+target.username).setColor(Colors.Orange);
+    if (!warnings.length) e.setDescription("No warning records found.");
+    for (const w of warnings.slice(0,20)) e.addFields({name:String(w.id)+(w.clearedAt?" • Cleared":" • Active"),value:"Reason: "+text(w.reason,180)+"\nBy: <@"+w.issuedByDiscordId+"> • "+new Date(w.createdAt).toISOString(),inline:false});
+    await i.editReply({embeds:[e]}); return;
+  }
+
+  if (sub === "clear-warnings") {
+    await i.deferReply({flags:MessageFlags.Ephemeral});
+    const target = i.options.getUser("user",true);
+    const result = await communityApi.clearWarnings(target.id,a);
+    await logToChannel(client,new EmbedBuilder().setTitle("Warnings cleared").setColor(Colors.Green).addFields({name:"Member",value:"<@"+target.id+">"},{name:"Count",value:String(result.count??0)},{name:"Staff",value:"<@"+i.user.id+">"}).setTimestamp());
+    await i.editReply("Cleared "+String(result.count??0)+" active warning(s) for <@"+target.id+">."); return;
+  }
+
+  if (sub === "purge") {
+    await i.deferReply({flags:MessageFlags.Ephemeral});
+    const amount = i.options.getInteger("amount",true);
+    const channel:any = i.channel;
+    if (!channel || typeof channel.bulkDelete !== "function") { await i.editReply("Use this in a regular text channel that supports bulk deletion."); return; }
+    const deleted = await channel.bulkDelete(amount,true);
+    await communityApi.recordAudit({...a,action:"discord.channel.purge",details:{channelId:i.channelId,requested:amount,deleted:deleted.size}}).catch(()=>undefined);
+    await logToChannel(client,new EmbedBuilder().setTitle("Channel messages purged").setColor(Colors.Orange).addFields({name:"Channel",value:"<#"+i.channelId+">"},{name:"Deleted",value:String(deleted.size)},{name:"Staff",value:"<@"+i.user.id+">"}).setTimestamp());
+    await i.editReply("Deleted "+deleted.size+" recent message(s). Discord does not bulk-delete messages older than 14 days."); return;
+  }
+
+  if (sub === "lock" || sub === "unlock") {
+    await i.deferReply({flags:MessageFlags.Ephemeral});
+    const channel:any = i.channel;
+    if (!channel || !channel.permissionOverwrites || !i.guild) { await i.editReply("Use this in a text channel with permission overwrites."); return; }
+    await channel.permissionOverwrites.edit(guild.roles.everyone.id,{SendMessages:sub==="lock"?false:null});
+    await communityApi.recordAudit({...a,action:"discord.channel."+sub,details:{channelId:i.channelId}}).catch(()=>undefined);
+    await logToChannel(client,new EmbedBuilder().setTitle("Channel "+(sub==="lock"?"locked":"unlocked")).setColor(Colors.DarkAqua).addFields({name:"Channel",value:"<#"+i.channelId+">"},{name:"Staff",value:"<@"+i.user.id+">"}).setTimestamp());
+    await i.editReply(sub==="lock"?"Locked @everyone from sending messages in this channel.":"Restored inherited @everyone send permissions for this channel."); return;
+  }
+}
+
 export async function handleCommand(client: Client, i: ChatInputCommandInteraction): Promise<void> {
   const name=i.commandName;
   if (name==="ping") { await i.reply({content:"Pong! Gateway latency: "+Math.max(0,client.ws.ping)+" ms.",flags:MessageFlags.Ephemeral}); return; }
@@ -310,7 +429,7 @@ export async function handleCommand(client: Client, i: ChatInputCommandInteracti
       {name:"Community",value:"/signup • /verify • /profile • /players • /status • /sessions • /announcements"},
       {name:"Help & feedback",value:"/report • /ticket create • /ticket close • /suggest"},
       {name:"Info",value:"/rules • /faq • /ping"},
-      {name:"Staff",value:"/admin stats • player • ban • unban • reports • resolve-report • announce • maintenance • audit • tickets • suggestions • role • config"}
+      {name:"Staff",value:"/admin and /mod provide account moderation, Discord moderation, warning history, reports, announcements, maintenance, tickets, suggestions, audit, and role tools."}
     ).setFooter({text:"Staff commands are permission checked."})]}); return;
   }
   if (name==="signup") {
@@ -376,6 +495,7 @@ export async function handleCommand(client: Client, i: ChatInputCommandInteracti
     else await closeTicketHere(i,client,i.options.getString("reason")??undefined);
     return;
   }
+  if (name==="mod") { await handleMod(i,client); return; }
   if (name==="admin") { await handleAdmin(i,client); return; }
 }
 
