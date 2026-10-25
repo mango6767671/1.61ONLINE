@@ -156,12 +156,12 @@ HttpResult CommunityServicesClient::SendFriendRequest(
 HttpResult CommunityServicesClient::AcceptFriendRequest(
     const std::string& accessToken, const std::string& targetUserId) const {
     return Request(L"POST",
-        "/v1/social/friend-requests/" + targetUserId + "/accept", "{}", accessToken);
+        "/v1/social/friend-requests/" + UrlEncode(targetUserId) + "/accept", "{}", accessToken);
 }
 
 HttpResult CommunityServicesClient::RemoveFriend(
     const std::string& accessToken, const std::string& targetUserId) const {
-    return Request(L"DELETE", "/v1/social/friends/" + targetUserId, {}, accessToken);
+    return Request(L"DELETE", "/v1/social/friends/" + UrlEncode(targetUserId), {}, accessToken);
 }
 
 HttpResult CommunityServicesClient::Heartbeat(
