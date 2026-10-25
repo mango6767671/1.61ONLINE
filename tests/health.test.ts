@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
 
-let app: FastifyInstance;
+let app: FastifyInstance | undefined;
 
 beforeAll(async () => {
   process.env.NODE_ENV = "test";
@@ -12,25 +12,25 @@ beforeAll(async () => {
   app = await buildApp();
 });
 
-describe("health endpoints", () => {
+describe("HTTP API", () => {
   it("reports that the process is alive", async () => {
-    const response = await app.inject({ method: "GET", url: "/health/live" });
+    const response = await app!.inject({ method: "GET", url: "/health/live" });
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual({ status: "ok" });
   });
 
   it("exposes the API identity", async () => {
-    const response = await app.inject({ method: "GET", url: "/" });
+    const response = await app!.inject({ method: "GET", url: "/" });
     expect(response.statusCode).toBe(200);
     expect(response.json().apiVersion).toBe("v1");
   });
 
   it("rejects unauthenticated player requests", async () => {
-    const response = await app.inject({ method: "GET", url: "/v1/player/profile" });
+    const response = await app!.inject({ method: "GET", url: "/v1/player/profile" });
     expect(response.statusCode).toBe(401);
   });
 });
 
 afterAll(async () => {
-  await app?.close();
+  if (app) await app.close();
 });
