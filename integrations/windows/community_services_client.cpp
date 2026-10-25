@@ -250,11 +250,19 @@ HttpResult CommunityServicesClient::Request(
     parts.dwStructSize = sizeof(parts);
     parts.dwSchemeLength = static_cast<DWORD>(-1);
     parts.dwHostNameLength = static_cast<DWORD>(-1);
+    parts.dwUserNameLength = static_cast<DWORD>(-1);
+    parts.dwPasswordLength = static_cast<DWORD>(-1);
     parts.dwUrlPathLength = static_cast<DWORD>(-1);
     parts.dwExtraInfoLength = static_cast<DWORD>(-1);
 
     if (!WinHttpCrackUrl(baseUrl_.c_str(), 0, 0, &parts)) return Failure(GetLastError());
     if (!parts.lpszHostName || parts.dwHostNameLength == 0) return Failure(ERROR_INVALID_PARAMETER);
+    // Only accept an origin (scheme + host + optional port); path, userinfo,
+    // query, and fragment are intentionally not part of baseUrl_.
+    if (parts.dwUserNameLength > 0 || parts.dwPasswordLength > 0 ||
+        parts.dwUrlPathLength > 1 || parts.dwExtraInfoLength > 0) {
+        return Failure(ERROR_INVALID_PARAMETER);
+    }
 
     const std::wstring host(parts.lpszHostName, parts.dwHostNameLength);
     const bool secure = parts.nScheme == INTERNET_SCHEME_HTTPS;
