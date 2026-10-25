@@ -10,6 +10,8 @@ import playerRoutes from "./routes/player.js";
 import presenceRoutes from "./routes/presence.js";
 import sessionRoutes from "./routes/sessions.js";
 import matchmakingRoutes from "./routes/matchmaking.js";
+import clientRoutes from "./routes/client.js";
+import socialRoutes from "./routes/social.js";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -27,7 +29,7 @@ export async function buildApp() {
   await app.register(helmet);
   await app.register(cors, {
     origin: env.CORS_ORIGIN.split(",").map((origin) => origin.trim()),
-    methods: ["GET", "POST", "PATCH", "OPTIONS"]
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
   });
   await app.register(rateLimit, { max: 100, timeWindow: "1 minute" });
   await app.register(jwt, { secret: env.JWT_SECRET });
@@ -46,6 +48,8 @@ export async function buildApp() {
   await app.register(presenceRoutes, { prefix: "/v1/presence" });
   await app.register(sessionRoutes, { prefix: "/v1/sessions" });
   await app.register(matchmakingRoutes, { prefix: "/v1/matchmaking" });
+  await app.register(clientRoutes, { prefix: "/v1/client" });
+  await app.register(socialRoutes, { prefix: "/v1/social" });
 
   app.get("/", async () => ({
     service: "community-online-backend",
