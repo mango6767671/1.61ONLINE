@@ -6,6 +6,12 @@ The community backend now exposes an independently defined client-services contr
 
 This is **not** a wire-compatible Social Club implementation, an official Rockstar service, or a patch for an unmodified GTA V client. A real client adapter must be implemented and built against a source tree and interfaces that the project is authorized to modify. Do not copy proprietary service code, credentials, protocol definitions, or private signing material.
 
+## Windows reference adapter
+
+The repository includes a small WinHTTP wrapper in `integrations/windows/community_services_client.hpp` and `.cpp`. It provides typed method names for the community endpoints but deliberately returns the HTTP response body as raw JSON; the calling client should parse it with its approved JSON library and check both `transportOk` and `statusCode`. Link against `winhttp.lib`. The adapter is a starting point for application-level calls, not a binary-compatible replacement for the Social Club SDK or its internal interfaces.
+
+The adapter uses HTTPS when the configured base URL is HTTPS. Use plain HTTP only on a trusted local development machine. Never print access tokens or passwords in logs.
+
 ## Suggested client flow
 
 1. Configure a community API base URL, for example `https://online.example.invalid`. Do not hard-code a production domain into the client.
