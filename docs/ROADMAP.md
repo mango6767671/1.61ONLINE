@@ -17,9 +17,10 @@ This roadmap describes current implementation state and planned work.
 - [x] Versioned client bootstrap manifest with capability declarations
 - [x] Unified authenticated account/profile/presence snapshot
 - [x] Community player search and friend-request/friendship API
+- [x] Database-backed friend graph workflow tests
 - [ ] Refresh-token rotation and session revocation
 - [ ] Email verification and account recovery design
-- [ ] Player profile persistence and social graph integration tests
+- [ ] Full player profile persistence and account lifecycle tests
 - [ ] Server-authoritative inventory and progression models
 - [ ] Audit log for sensitive account/economy mutations
 
@@ -36,7 +37,8 @@ This roadmap describes current implementation state and planned work.
 ## Phase 3 — Client and real-time gameplay integration
 
 - [x] Documented community HTTP contract and current limitations
-- [ ] Implement and test the authorized client-side adapter
+- [x] Reference Windows/WinHTTP adapter for community service calls
+- [ ] Implement and test the authorized client-side adapter in the target project
 - [ ] Documented client/server message schemas and real-time transport
 - [ ] Server-authoritative session state
 - [ ] Reconnection and timeout behavior
