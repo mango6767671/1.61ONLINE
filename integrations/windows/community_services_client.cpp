@@ -207,10 +207,10 @@ HttpResult CommunityServicesClient::CreateSession(
     if (maxPlayers < 2 || maxPlayers > 32) return Failure(ERROR_INVALID_PARAMETER);
 
     const std::string body =
-        "{\\"name\\":\\"" + JsonEscape(name) +
-        "\\",\\"region\\":\\"" + JsonEscape(region) +
-        "\\",\\"gameMode\\":\\"" + JsonEscape(gameMode) +
-        "\\",\\"visibility\\":\\"public\\",\\"maxPlayers\\":" +
+        "{\"name\":\"" + JsonEscape(name) +
+        "\",\"region\":\"" + JsonEscape(region) +
+        "\",\"gameMode\":\"" + JsonEscape(gameMode) +
+        "\",\"visibility\":\"public\",\"maxPlayers\":" +
         std::to_string(maxPlayers) + "}";
     return Request(L"POST", "/v1/sessions", body, accessToken);
 }
