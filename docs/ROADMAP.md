@@ -37,7 +37,8 @@ This roadmap describes current implementation state and planned work.
 ## Phase 3 — Client and real-time gameplay integration
 
 - [x] Documented community HTTP contract and current limitations
-- [x] Reference Windows/WinHTTP adapter for community service calls
+- [x] Reference Windows/WinHTTP adapter source and CMake build target
+- [ ] Confirm Windows CI build passes before calling the native adapter verified
 - [ ] Implement and test the authorized client-side adapter in the target project
 - [ ] Documented client/server message schemas and real-time transport
 - [ ] Server-authoritative session state
