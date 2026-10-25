@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
-import { randomUUID } from "node:crypto";
+import { randomInt } from "node:crypto";
 
 const botKey = "test-only-discord-bot-secret-that-is-at-least-32-characters";
 let app: FastifyInstance | undefined;
@@ -10,7 +10,7 @@ let actorDiscordId = "";
 let communityUserId = "";
 
 function snowflake(prefix: string): string {
-  return prefix + randomUUID().replace(/-/g, "").slice(0, 17);
+  return prefix + Array.from({ length: 17 }, () => randomInt(0, 10)).join("");
 }
 
 const authHeader = { "x-community-bot-key": botKey };
