@@ -7,6 +7,9 @@ import { env } from "./config/env.js";
 import healthRoutes from "./routes/health.js";
 import authRoutes from "./routes/auth.js";
 import playerRoutes from "./routes/player.js";
+import presenceRoutes from "./routes/presence.js";
+import sessionRoutes from "./routes/sessions.js";
+import matchmakingRoutes from "./routes/matchmaking.js";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -40,6 +43,9 @@ export async function buildApp() {
   await app.register(healthRoutes, { prefix: "/health" });
   await app.register(authRoutes, { prefix: "/v1/auth" });
   await app.register(playerRoutes, { prefix: "/v1/player" });
+  await app.register(presenceRoutes, { prefix: "/v1/presence" });
+  await app.register(sessionRoutes, { prefix: "/v1/sessions" });
+  await app.register(matchmakingRoutes, { prefix: "/v1/matchmaking" });
 
   app.get("/", async () => ({
     service: "community-online-backend",
