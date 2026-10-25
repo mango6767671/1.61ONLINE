@@ -13,6 +13,7 @@ Authorization: Bearer <accessToken>
 | GET | `/` | Service identity |
 | GET | `/health/live` | Process liveness |
 | GET | `/health/ready` | Database readiness |
+| GET | `/v1/client/bootstrap` | Community client contract and capability manifest |
 
 ## Authentication
 
@@ -37,6 +38,16 @@ Accepts the same email/password fields. Returns a 15-minute bearer access token.
 
 Returns the authenticated account.
 
+## Client account facade
+
+### GET /v1/client/bootstrap
+
+Public machine-readable contract manifest. It declares the community contract ID/version, routes, heartbeat recommendations, and implemented/unimplemented capabilities. The contract is independent of Rockstar service protocols; a client must be explicitly adapted to consume it.
+
+### GET /v1/client/account
+
+Returns the authenticated account, player profile, and presence snapshot in one response. This endpoint returns only the caller's account details.
+
 ## Player profile
 
 ### GET /v1/player/profile
@@ -55,10 +66,33 @@ Updates the display name only.
 
 The value may be null to clear the name. Non-null names must be 3–32 characters and contain letters, numbers, spaces, underscores, or hyphens.
 
+## Community social graph
+
+Player IDs are community account UUIDs. The social graph is not synced with Rockstar accounts or any external service.
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/v1/social/players?query=player` | Search public display names |
+| GET | `/v1/social/friends` | List accepted friends and their current presence |
+| GET | `/v1/social/friend-requests?direction=incoming` | List incoming or outgoing requests |
+| POST | `/v1/social/friend-requests` | Send a request |
+| POST | `/v1/social/friend-requests/:userId/accept` | Accept an incoming request |
+| DELETE | `/v1/social/friend-requests/:userId` | Cancel or decline a pending request |
+| DELETE | `/v1/social/friends/:userId` | Remove a friend |
+
+Send-request body:
+
+```json
+{
+  "targetUserId": "00000000-0000-4000-8000-000000000000"
+}
+```
+
+Player search requires a 2–32 character display-name fragment. It excludes the caller and accounts already connected by a pending or accepted relationship. Responses do not expose other players' email addresses. Friend and request lists are bounded.
+
 ## Error shape
 
 Errors use a stable machine-readable `error` key. Validation errors may also include a `details` object. Clients should not rely on internal database or exception messages.
-
 
 ## Presence
 
@@ -69,7 +103,7 @@ All presence endpoints require authentication.
 | PUT | `/v1/presence/heartbeat` | Refresh the caller's presence lease |
 | GET | `/v1/presence` | List recently active players |
 
-Send a heartbeat periodically (for example, every 30 seconds). Presence older than 90 seconds is excluded from the active-player list. The heartbeat body may contain `{"status":"away"}`; otherwise status defaults to `online`. A player in a session remains marked `in_session`.
+Send a heartbeat periodically (the client contract recommends every 30 seconds). Presence older than 90 seconds is excluded from the active-player list. The heartbeat body may contain `{"status":"away"}`; otherwise status defaults to `online`. A player in a session remains marked `in_session`.
 
 ## Sessions
 
@@ -113,6 +147,8 @@ Queue body:
 
 This milestone stores queue requests and exposes queue status. It does **not** yet run a matchmaking worker or automatically assign players to sessions.
 
-## Presence and session lifecycle notes
+## Compatibility boundary
 
-These are HTTP control-plane endpoints, not a real-time game transport. They do not synchronize player coordinates, physics, vehicles, mission state, or other gameplay events. Those require a separately designed authoritative real-time service and a compatible client.
+This is an independently defined community API, not an implementation of Rockstar's private Social Club wire protocol. The bootstrap response deliberately reports unsupported services such as automatic matchmaking, real-time gameplay transport, cloud saves, achievements, voice chat, and game-entitlement checks. A game client needs an intentional adapter to this contract; the backend alone cannot make an unmodified client use it.
+
+HTTP session endpoints manage lobby control-plane operations only. They do not synchronize player coordinates, physics, vehicles, mission state, or other gameplay events.
