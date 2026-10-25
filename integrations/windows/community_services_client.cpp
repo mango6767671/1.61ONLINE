@@ -167,6 +167,12 @@ HttpResult CommunityServicesClient::SendFriendRequest(
         "{\"targetUserId\":\"" + JsonEscape(targetUserId) + "\"}", accessToken);
 }
 
+HttpResult CommunityServicesClient::CancelFriendRequest(
+    const std::string& accessToken, const std::string& targetUserId) const {
+    return Request(L"DELETE",
+        "/v1/social/friend-requests/" + UrlEncode(targetUserId), {}, accessToken);
+}
+
 HttpResult CommunityServicesClient::AcceptFriendRequest(
     const std::string& accessToken, const std::string& targetUserId) const {
     return Request(L"POST",
@@ -184,8 +190,39 @@ HttpResult CommunityServicesClient::Heartbeat(
         away ? "{\"status\":\"away\"}" : "{\"status\":\"online\"}", accessToken);
 }
 
+HttpResult CommunityServicesClient::PresenceDirectory(const std::string& accessToken) const {
+    return Request(L"GET", "/v1/presence", {}, accessToken);
+}
+
 HttpResult CommunityServicesClient::PublicSessions(const std::string& accessToken) const {
     return Request(L"GET", "/v1/sessions", {}, accessToken);
+}
+
+HttpResult CommunityServicesClient::CreateSession(
+    const std::string& accessToken,
+    const std::string& name,
+    const std::string& region,
+    const std::string& gameMode,
+    int maxPlayers) const {
+    if (maxPlayers < 2 || maxPlayers > 32) return Failure(ERROR_INVALID_PARAMETER);
+
+    const std::string body =
+        "{\\"name\\":\\"" + JsonEscape(name) +
+        "\\",\\"region\\":\\"" + JsonEscape(region) +
+        "\\",\\"gameMode\\":\\"" + JsonEscape(gameMode) +
+        "\\",\\"visibility\\":\\"public\\",\\"maxPlayers\\":" +
+        std::to_string(maxPlayers) + "}";
+    return Request(L"POST", "/v1/sessions", body, accessToken);
+}
+
+HttpResult CommunityServicesClient::JoinSession(
+    const std::string& accessToken, const std::string& sessionId) const {
+    return Request(L"POST", "/v1/sessions/" + UrlEncode(sessionId) + "/join", "{}", accessToken);
+}
+
+HttpResult CommunityServicesClient::LeaveSession(
+    const std::string& accessToken, const std::string& sessionId) const {
+    return Request(L"POST", "/v1/sessions/" + UrlEncode(sessionId) + "/leave", "{}", accessToken);
 }
 
 HttpResult CommunityServicesClient::QueueMatchmaking(
