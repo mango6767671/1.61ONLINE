@@ -15,7 +15,7 @@
     "test:watch": "vitest",
     "db:migrate": "tsx scripts/migrate.ts",
     "bot:dev": "tsx watch bot/index.ts",
-    "bot:start": "node dist/bot/index.js"
+    "bot:start": "tsx bot/index.ts"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.2",
