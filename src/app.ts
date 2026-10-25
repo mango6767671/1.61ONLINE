@@ -14,6 +14,13 @@ import matchmakingRoutes from "./routes/matchmaking.js";
 import clientRoutes from "./routes/client.js";
 import socialRoutes from "./routes/social.js";
 
+declare module "@fastify/jwt" {
+  interface FastifyJWT {
+    payload: { sub: string; email: string; sid?: string };
+    user: { sub: string; email: string; sid?: string };
+  }
+}
+
 declare module "fastify" {
   interface FastifyInstance {
     authenticate: (request: import("fastify").FastifyRequest, reply: import("fastify").FastifyReply) => Promise<void>;
