@@ -7,6 +7,7 @@ let db: typeof import("../src/db/pool.js").pool | undefined;
 let aliceId = "";
 let bobId = "";
 let charlieId = "";
+let wildcardDecoyId = "";
 let aliceToken = "";
 let bobToken = "";
 let charlieToken = "";
@@ -39,17 +40,23 @@ beforeAll(async () => {
     db.query<{ id: string }>(
       "INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id",
       [`charlie-${suffix}@example.test`, passwordHash]
+    ),
+    db.query<{ id: string }>(
+      "INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id",
+      [`wildcard-decoy-${suffix}@example.test`, passwordHash]
     )
   ]);
 
   aliceId = users[0].rows[0]!.id;
   bobId = users[1].rows[0]!.id;
   charlieId = users[2].rows[0]!.id;
+  wildcardDecoyId = users[3].rows[0]!.id;
 
   await Promise.all([
     db.query("INSERT INTO player_profiles (user_id, display_name) VALUES ($1, $2)", [aliceId, `Alice_${suffix}`]),
     db.query("INSERT INTO player_profiles (user_id, display_name) VALUES ($1, $2)", [bobId, `Bob_${suffix}`]),
-    db.query("INSERT INTO player_profiles (user_id, display_name) VALUES ($1, $2)", [charlieId, `Charlie_${suffix}`])
+    db.query("INSERT INTO player_profiles (user_id, display_name) VALUES ($1, $2)", [charlieId, `Charlie_${suffix}`]),
+    db.query("INSERT INTO player_profiles (user_id, display_name) VALUES ($1, $2)", [wildcardDecoyId, `CharlieX${suffix}`])
   ]);
 
   aliceToken = app.jwt.sign({ sub: aliceId, email: `alice-${suffix}@example.test` }, { expiresIn: "15m" });
@@ -148,7 +155,7 @@ describe("community social graph", () => {
 afterAll(async () => {
   if (app) await app.close();
   if (db) {
-    const ids = [aliceId, bobId, charlieId].filter(Boolean);
+    const ids = [aliceId, bobId, charlieId, wildcardDecoyId].filter(Boolean);
     if (ids.length) await db.query("DELETE FROM users WHERE id = ANY($1::uuid[])", [ids]);
     await db.end();
   }
