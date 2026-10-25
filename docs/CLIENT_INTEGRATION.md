@@ -16,8 +16,8 @@ The adapter uses HTTPS when the configured base URL is HTTPS. Use plain HTTP onl
 
 1. Configure a community API base URL, for example `https://online.example.invalid`. Do not hard-code a production domain into the client.
 2. Fetch `GET /v1/client/bootstrap` and verify the expected community contract ID and version.
-3. Register or authenticate using `POST /v1/auth/register` or `POST /v1/auth/login`. Keep the returned bearer token in the platform's appropriate secure storage and never log it.
-4. Send `Authorization: Bearer <accessToken>` on protected requests.
+3. Register or authenticate using `POST /v1/auth/register` or `POST /v1/auth/login`. Keep both returned tokens in platform-appropriate secure storage and never log them.
+4. Send `Authorization: Bearer <accessToken>` on protected requests. Access tokens last 15 minutes; rotate the refresh token through `POST /v1/auth/refresh` before the access token expires. Call `POST /v1/auth/logout` to revoke the current session or authenticated `POST /v1/auth/logout-all` to revoke all refresh sessions.
 5. Fetch `GET /v1/client/account` and `GET /v1/player/profile` to populate community identity and profile state.
 6. Use `/v1/social/players`, `/v1/social/friends`, and `/v1/social/friend-requests` for the community friend graph.
 7. Refresh online presence with `PUT /v1/presence/heartbeat` approximately every 30 seconds. A presence entry is treated as active for 90 seconds.
@@ -25,7 +25,7 @@ The adapter uses HTTPS when the configured base URL is HTTPS. Use plain HTTP onl
 
 ## Contract behavior
 
-- Authentication is the project's own email/password account system with a short-lived bearer access token.
+- Authentication is the project's own email/password account system with 15-minute access tokens and rotating 30-day refresh tokens. Session-bound access tokens are checked against server-side revocation state.
 - Player IDs are community account UUIDs, not Rockstar account identifiers.
 - The friend graph is private to 1.61ONLINE and does not synchronize to Rockstar services.
 - Money, rank, and other progression shown by the current profile API are community database fields. They are not authoritative GTA Online data.
