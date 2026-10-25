@@ -26,9 +26,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - run: npm install
       - run: npm run typecheck
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/online_test
+          JWT_SECRET: ci-only-secret-that-is-at-least-32-characters
+          NODE_ENV: test
+      - run: npm run db:migrate
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/online_test
           JWT_SECRET: ci-only-secret-that-is-at-least-32-characters

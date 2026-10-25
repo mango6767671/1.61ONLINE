@@ -1,6 +1,6 @@
 # Development roadmap
 
-This roadmap describes intended work, not implemented features.
+This roadmap describes current implementation state and planned work.
 
 ## Phase 0 — Foundation
 
@@ -12,27 +12,38 @@ This roadmap describes intended work, not implemented features.
 - [x] Liveness/readiness endpoints
 - [x] Basic CI, container setup, and security guidance
 
-## Phase 1 — Account and player data
+## Phase 1 — Account and community client contract
 
-- [ ] Refresh-token rotation and session revocation
+- [x] Versioned client bootstrap manifest with capability declarations
+- [x] Unified authenticated account/profile/presence snapshot
+- [x] Community player search and friend-request/friendship API
+- [x] Database-backed friend graph workflow tests
+- [x] Rotating refresh tokens, logout, and server-side access-session revocation
 - [ ] Email verification and account recovery design
-- [ ] Player profile persistence tests
+- [ ] Full player profile persistence and account lifecycle tests
 - [ ] Server-authoritative inventory and progression models
 - [ ] Audit log for sensitive account/economy mutations
 
 ## Phase 2 — Presence and sessions
 
-- [x] Basic HTTP presence heartbeat and active-player listing\n- [ ] Presence service with robust online/offline lifecycle and lease cleanup
-- [x] Session creation, discovery, join, leave, and capacity checks\n- [ ] Session directory with expiry cleanup and owner controls
-- [x] Persistent lobby/session model and matchmaking queue API\n- [ ] Matchmaking worker that groups players and assigns sessions
+- [x] Basic HTTP presence heartbeat and active-player listing
+- [ ] Presence service with robust online/offline lifecycle and lease cleanup
+- [x] Session creation, discovery, join, leave, and capacity checks
+- [ ] Session directory with expiry cleanup and owner controls
+- [x] Persistent lobby/session model and matchmaking queue API
+- [ ] Matchmaking worker that groups players and assigns sessions
 - [ ] Abuse controls and load tests
 
-## Phase 3 — Real-time gameplay services
+## Phase 3 — Client and real-time gameplay integration
 
+- [x] Documented community HTTP contract and current limitations
+- [x] Reference Windows/WinHTTP adapter for community service calls
+- [ ] Implement and test the authorized client-side adapter in the target project
 - [ ] Documented client/server message schemas and real-time transport
 - [ ] Server-authoritative session state
 - [ ] Reconnection and timeout behavior
 - [ ] Mission/activity lifecycle
 - [ ] Observability and moderation controls
+- [ ] Client-driven end-to-end integration tests
 
-Do not mark a phase complete until its implementation, tests, documentation, and security review are present. Compatibility with any particular game client is not claimed by this backend foundation.
+The contract is independently authored and is not wire-compatible with Rockstar's proprietary Social Club APIs. Do not claim compatibility with a target game client until its adapter and end-to-end tests are implemented using interfaces and source the project is authorized to modify.
