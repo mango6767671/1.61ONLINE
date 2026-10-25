@@ -124,12 +124,12 @@ HttpResult CommunityServicesClient::Login(
 
 HttpResult CommunityServicesClient::Refresh(const std::string& refreshToken) const {
     return Request(L"POST", "/v1/auth/refresh",
-        "{\\"refreshToken\\":\\"" + JsonEscape(refreshToken) + "\\"}");
+        "{\"refreshToken\":\"" + JsonEscape(refreshToken) + "\"}");
 }
 
 HttpResult CommunityServicesClient::Logout(const std::string& refreshToken) const {
     return Request(L"POST", "/v1/auth/logout",
-        "{\\"refreshToken\\":\\"" + JsonEscape(refreshToken) + "\\"}");
+        "{\"refreshToken\":\"" + JsonEscape(refreshToken) + "\"}");
 }
 
 HttpResult CommunityServicesClient::LogoutAll(const std::string& accessToken) const {
