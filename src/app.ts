@@ -6,6 +6,7 @@ import rateLimit from "@fastify/rate-limit";
 import { env } from "./config/env.js";
 import healthRoutes from "./routes/health.js";
 import authRoutes from "./routes/auth.js";
+import playerRoutes from "./routes/player.js";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -23,7 +24,7 @@ export async function buildApp() {
   await app.register(helmet);
   await app.register(cors, {
     origin: env.CORS_ORIGIN.split(",").map((origin) => origin.trim()),
-    methods: ["GET", "POST", "OPTIONS"]
+    methods: ["GET", "POST", "PATCH", "OPTIONS"]
   });
   await app.register(rateLimit, { max: 100, timeWindow: "1 minute" });
   await app.register(jwt, { secret: env.JWT_SECRET });
@@ -38,6 +39,7 @@ export async function buildApp() {
 
   await app.register(healthRoutes, { prefix: "/health" });
   await app.register(authRoutes, { prefix: "/v1/auth" });
+  await app.register(playerRoutes, { prefix: "/v1/player" });
 
   app.get("/", async () => ({
     service: "community-online-backend",
