@@ -21,6 +21,8 @@ Construct `one61::CommunityServicesClient` with the origin of your own deploymen
 
 Call `Bootstrap()` first and check that the JSON response reports contract ID `community-client-services` and version `1`. Then use `Register()` or `Login()`. Securely store the access and refresh tokens, parse the raw JSON response with your application's approved JSON parser, rotate refresh tokens using `Refresh()`, and call `Logout()` when ending the session. Do not log passwords, access tokens, or refresh tokens.
 
+The wrapper also includes account/session revocation, profile/account reads, player search and friend requests, presence heartbeat and directory calls, public session creation/join/leave, and matchmaking queue/status/cancellation. Session creation is limited to 2–32 players client-side and server-side; server validation remains authoritative.
+
 Every method returns `HttpResult`:
 - `transportOk` indicates whether the HTTP exchange completed.
 - `statusCode` is the HTTP status returned by the server.
