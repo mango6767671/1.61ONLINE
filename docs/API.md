@@ -159,6 +159,35 @@ Queue body:
 
 This milestone stores queue requests and exposes queue status. It does **not** yet run a matchmaking worker or automatically assign players to sessions.
 
+## Discord community-management integration
+
+These endpoints are reserved for the separately running 1.61ONLINE Discord bot. Every route under /v1/integrations/discord requires the private HTTP header X-Community-Bot-Key. The server validates this against DISCORD_BOT_API_KEY using a constant-time comparison. Use a random secret of at least 32 characters, share it only with the backend and bot process, and never ship it to a game client or browser. If the variable is not configured, the integration returns 503.
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | /v1/integrations/discord/status | Health snapshot, counts, and maintenance state |
+| POST | /v1/integrations/discord/signup | Create or refresh a Discord-linked community account |
+| GET | /v1/integrations/discord/players | Search Discord-linked players |
+| GET | /v1/integrations/discord/players/:discordUserId | Inspect a community player and ban state |
+| POST / DELETE | /v1/integrations/discord/players/:discordUserId/ban | Apply or revoke a community ban |
+| GET | /v1/integrations/discord/sessions | List open public lobby records |
+| GET | /v1/integrations/discord/announcements | List active announcements |
+| POST | /v1/integrations/discord/announcements | Create an announcement |
+| DELETE | /v1/integrations/discord/announcements/:announcementId | Deactivate an announcement |
+| POST /v1/integrations/discord/reports | Submit a report |
+| GET / PATCH | /v1/integrations/discord/reports | List and review reports |
+| PUT | /v1/integrations/discord/maintenance | Enable or disable maintenance mode |
+| GET / POST | /v1/integrations/discord/audit | Read and append audit entries |
+| GET / POST | /v1/integrations/discord/tickets | List open tickets and create a ticket |
+| PUT | /v1/integrations/discord/tickets/:ticketId/channel | Attach a private Discord channel to a ticket |
+| GET | /v1/integrations/discord/tickets/by-channel/:channelId | Find the ticket for a Discord channel |
+| POST | /v1/integrations/discord/tickets/:ticketId/close | Close a ticket |
+| POST / GET / PATCH | /v1/integrations/discord/suggestions | Submit, list, and review feature suggestions |
+
+Discord-native accounts have a null email and password hash; ordinary email/password login deliberately cannot authenticate them. Signup is idempotent for the same Discord ID. Existing email-based accounts are not automatically linked to Discord; a secure account-link flow remains future work.
+
+A community ban revokes the player's active refresh sessions and authenticated API requests are denied while the ban is active. It does not ban the member from Discord. Maintenance mode returns HTTP 503 from normal /v1 routes while leaving health endpoints and the private Discord integration available so staff can disable maintenance.
+
 ## Compatibility boundary
 
 This is an independently defined community API, not an implementation of Rockstar's private Social Club wire protocol. The bootstrap response deliberately reports unsupported services such as automatic matchmaking, real-time gameplay transport, cloud saves, achievements, voice chat, and game-entitlement checks. A game client needs an intentional adapter to this contract; the backend alone cannot make an unmodified client use it.

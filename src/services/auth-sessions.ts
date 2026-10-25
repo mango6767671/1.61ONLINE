@@ -7,7 +7,7 @@ export const REFRESH_TOKEN_LIFETIME_SECONDS = 30 * 24 * 60 * 60;
 
 export interface AuthUser {
   id: string;
-  email: string;
+  email: string | null;
 }
 
 export interface IssuedAuthSession {
@@ -30,15 +30,13 @@ export async function issueAuthSession(
 ): Promise<IssuedAuthSession> {
   const refreshToken = randomBytes(48).toString("base64url");
   const result = await client.query<{ id: string; expires_at: Date }>(
-    `INSERT INTO auth_sessions (user_id, refresh_token_hash, expires_at)
-     VALUES ($1, $2, NOW() + INTERVAL '30 days')
-     RETURNING id, expires_at`,
+    "INSERT INTO auth_sessions (user_id, refresh_token_hash, expires_at) VALUES ($1, $2, NOW() + INTERVAL '30 days') RETURNING id, expires_at",
     [user.id, hashRefreshToken(refreshToken)]
   );
   const session = result.rows[0]!;
 
   const accessToken = app.jwt.sign(
-    { sub: user.id, email: user.email, sid: session.id },
+    { sub: user.id, email: user.email ?? undefined, sid: session.id },
     { expiresIn: "15m" }
   );
 

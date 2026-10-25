@@ -7,6 +7,7 @@ const schema = z.object({
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   DATABASE_URL: z.string().min(1),
   JWT_SECRET: z.string().min(32, "JWT_SECRET must contain at least 32 characters"),
+  DISCORD_BOT_API_KEY: z.string().min(32, "DISCORD_BOT_API_KEY must contain at least 32 characters").optional(),
   CORS_ORIGIN: z.string().default("http://localhost:5173"),
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info")
 });

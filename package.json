@@ -1,9 +1,9 @@
 {
   "name": "gta-online-community-backend",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
-  "description": "Independent community backend foundation for a GTA V 1.61-compatible multiplayer project.",
+  "description": "Independent community backend and Discord community-management bot for a GTA V 1.61-compatible multiplayer project.",
   "license": "UNLICENSED",
   "engines": { "node": ">=22.0.0" },
   "scripts": {
@@ -13,7 +13,10 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:migrate": "tsx scripts/migrate.ts"
+    "db:migrate": "tsx scripts/migrate.ts",
+    "bot:dev": "tsx watch bot/src/index.ts",
+    "bot:start": "node dist/bot/src/index.js",
+    "bot:deploy": "tsx bot/src/deploy-commands.ts"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.2",
@@ -21,6 +24,7 @@
     "@fastify/jwt": "^9.1.0",
     "@fastify/rate-limit": "^10.2.1",
     "argon2": "^0.41.1",
+    "discord.js": "14.27.0",
     "dotenv": "^16.4.7",
     "fastify": "^5.2.1",
     "pg": "^8.13.1",
