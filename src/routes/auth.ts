@@ -14,7 +14,7 @@ const refreshSchema = z.object({
 }).strict();
 
 const authRoutes: FastifyPluginAsync = async (app) => {
-  app.post("/register", async (request, reply) => {
+  app.post("/register", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } }, async (request, reply) => {
     const parsed = credentialsSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.code(400).send({ error: "invalid_request", details: parsed.error.flatten() });
@@ -48,7 +48,7 @@ const authRoutes: FastifyPluginAsync = async (app) => {
     }
   });
 
-  app.post("/login", async (request, reply) => {
+  app.post("/login", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (request, reply) => {
     const parsed = credentialsSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.code(400).send({ error: "invalid_request", details: parsed.error.flatten() });
@@ -83,7 +83,7 @@ const authRoutes: FastifyPluginAsync = async (app) => {
     }
   });
 
-  app.post("/refresh", async (request, reply) => {
+  app.post("/refresh", { config: { rateLimit: { max: 30, timeWindow: "1 minute" } } }, async (request, reply) => {
     const parsed = refreshSchema.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send({ error: "invalid_request" });
 
@@ -156,7 +156,7 @@ const authRoutes: FastifyPluginAsync = async (app) => {
     }
   });
 
-  app.post("/logout", async (request, reply) => {
+  app.post("/logout", { config: { rateLimit: { max: 20, timeWindow: "1 minute" } } }, async (request, reply) => {
     const parsed = refreshSchema.safeParse(request.body);
     if (!parsed.success) return reply.code(400).send({ error: "invalid_request" });
 
