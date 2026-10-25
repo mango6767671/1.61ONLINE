@@ -18,6 +18,9 @@ const clientRoutes: FastifyPluginAsync = async (app) => {
     endpoints: {
       register: "/v1/auth/register",
       login: "/v1/auth/login",
+      refresh: "/v1/auth/refresh",
+      logout: "/v1/auth/logout",
+      logoutAll: "/v1/auth/logout-all",
       currentAccount: "/v1/client/account",
       playerProfile: "/v1/player/profile",
       playerSearch: "/v1/social/players",
