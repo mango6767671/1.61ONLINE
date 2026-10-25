@@ -38,7 +38,7 @@ Real-time session traffic should eventually use a separately designed transport 
 
 ## Local setup
 
-1. Install Node.js 20.11 or newer and PostgreSQL.
+1. Install Node.js 22 or newer and PostgreSQL.
 2. Copy `.env.example` to `.env` and set a unique `JWT_SECRET` of at least 32 characters.
 3. Create a PostgreSQL database matching `DATABASE_URL`.
 4. Run `npm install`.
