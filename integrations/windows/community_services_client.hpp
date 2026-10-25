@@ -28,6 +28,9 @@ public:
     HttpResult Bootstrap() const;
     HttpResult Register(const std::string& email, const std::string& password) const;
     HttpResult Login(const std::string& email, const std::string& password) const;
+    HttpResult Refresh(const std::string& refreshToken) const;
+    HttpResult Logout(const std::string& refreshToken) const;
+    HttpResult LogoutAll(const std::string& accessToken) const;
     HttpResult CurrentAccount(const std::string& accessToken) const;
     HttpResult PlayerProfile(const std::string& accessToken) const;
     HttpResult SearchPlayers(const std::string& accessToken, const std::string& query) const;
