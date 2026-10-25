@@ -167,6 +167,12 @@ HttpResult CommunityServicesClient::SendFriendRequest(
         "{\"targetUserId\":\"" + JsonEscape(targetUserId) + "\"}", accessToken);
 }
 
+HttpResult CommunityServicesClient::CancelFriendRequest(
+    const std::string& accessToken, const std::string& targetUserId) const {
+    return Request(L"DELETE",
+        "/v1/social/friend-requests/" + UrlEncode(targetUserId), {}, accessToken);
+}
+
 HttpResult CommunityServicesClient::AcceptFriendRequest(
     const std::string& accessToken, const std::string& targetUserId) const {
     return Request(L"POST",
@@ -184,8 +190,39 @@ HttpResult CommunityServicesClient::Heartbeat(
         away ? "{\"status\":\"away\"}" : "{\"status\":\"online\"}", accessToken);
 }
 
+HttpResult CommunityServicesClient::PresenceDirectory(const std::string& accessToken) const {
+    return Request(L"GET", "/v1/presence", {}, accessToken);
+}
+
 HttpResult CommunityServicesClient::PublicSessions(const std::string& accessToken) const {
     return Request(L"GET", "/v1/sessions", {}, accessToken);
+}
+
+HttpResult CommunityServicesClient::CreateSession(
+    const std::string& accessToken,
+    const std::string& name,
+    const std::string& region,
+    const std::string& gameMode,
+    int maxPlayers) const {
+    if (maxPlayers < 2 || maxPlayers > 32) return Failure(ERROR_INVALID_PARAMETER);
+
+    const std::string body =
+        "{\"name\":\"" + JsonEscape(name) +
+        "\",\"region\":\"" + JsonEscape(region) +
+        "\",\"gameMode\":\"" + JsonEscape(gameMode) +
+        "\",\"visibility\":\"public\",\"maxPlayers\":" +
+        std::to_string(maxPlayers) + "}";
+    return Request(L"POST", "/v1/sessions", body, accessToken);
+}
+
+HttpResult CommunityServicesClient::JoinSession(
+    const std::string& accessToken, const std::string& sessionId) const {
+    return Request(L"POST", "/v1/sessions/" + UrlEncode(sessionId) + "/join", "{}", accessToken);
+}
+
+HttpResult CommunityServicesClient::LeaveSession(
+    const std::string& accessToken, const std::string& sessionId) const {
+    return Request(L"POST", "/v1/sessions/" + UrlEncode(sessionId) + "/leave", "{}", accessToken);
 }
 
 HttpResult CommunityServicesClient::QueueMatchmaking(
@@ -213,11 +250,19 @@ HttpResult CommunityServicesClient::Request(
     parts.dwStructSize = sizeof(parts);
     parts.dwSchemeLength = static_cast<DWORD>(-1);
     parts.dwHostNameLength = static_cast<DWORD>(-1);
+    parts.dwUserNameLength = static_cast<DWORD>(-1);
+    parts.dwPasswordLength = static_cast<DWORD>(-1);
     parts.dwUrlPathLength = static_cast<DWORD>(-1);
     parts.dwExtraInfoLength = static_cast<DWORD>(-1);
 
-    if (!WinHttpCrackUrl(baseUrl_.c_str(), 0, &parts)) return Failure(GetLastError());
+    if (!WinHttpCrackUrl(baseUrl_.c_str(), 0, 0, &parts)) return Failure(GetLastError());
     if (!parts.lpszHostName || parts.dwHostNameLength == 0) return Failure(ERROR_INVALID_PARAMETER);
+    // Only accept an origin (scheme + host + optional port); path, userinfo,
+    // query, and fragment are intentionally not part of baseUrl_.
+    if (parts.dwUserNameLength > 0 || parts.dwPasswordLength > 0 ||
+        parts.dwUrlPathLength > 1 || parts.dwExtraInfoLength > 0) {
+        return Failure(ERROR_INVALID_PARAMETER);
+    }
 
     const std::wstring host(parts.lpszHostName, parts.dwHostNameLength);
     const bool secure = parts.nScheme == INTERNET_SCHEME_HTTPS;

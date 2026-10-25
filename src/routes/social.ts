@@ -25,7 +25,7 @@ const socialRoutes: FastifyPluginAsync = async (app) => {
        LEFT JOIN player_presence p ON p.user_id = u.id
        WHERE u.id <> $2
          AND pp.display_name IS NOT NULL
-         AND pp.display_name ILIKE '%' || $1 || '%'
+         AND pp.display_name ILIKE '%' || $1 || '%' ESCAPE '!'
          AND NOT EXISTS (
            SELECT 1 FROM friendships f
            WHERE f.user_low_id = LEAST(u.id, $2::uuid)
@@ -33,7 +33,7 @@ const socialRoutes: FastifyPluginAsync = async (app) => {
          )
        ORDER BY pp.display_name ASC
        LIMIT 20`,
-      [parsed.data.query, request.user.sub]
+      [parsed.data.query.replace(/_/g, "!_"), request.user.sub]
     );
     return { players: result.rows };
   });
