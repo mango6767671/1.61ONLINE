@@ -195,9 +195,9 @@ const integrationRoutes: FastifyPluginAsync = async (app) => {
       "CASE WHEN pr.last_seen_at > NOW() - INTERVAL '90 seconds' THEN pr.status ELSE 'offline' END AS status " +
       "FROM discord_accounts d JOIN player_profiles p ON p.user_id = d.user_id " +
       "LEFT JOIN player_presence pr ON pr.user_id = d.user_id " +
-      "WHERE ($1::text IS NULL OR p.display_name ILIKE '%' || REPLACE($1, '!', '!!') || '%' ESCAPE '!') " +
+      "WHERE ($1::text IS NULL OR p.display_name ILIKE $1 ESCAPE '!') " +
       "ORDER BY p.rank DESC, p.display_name ASC LIMIT $2",
-      [query.data.query?.replace(/!/g, "!!").replace(/%/g, "!%").replace(/_/g, "!_") ?? null, query.data.limit]
+      [query.data.query ? "%" + query.data.query.replace(/[!%_]/g, (char) => "!" + char) + "%" : null, query.data.limit]
     );
     return { players: result.rows };
   });
