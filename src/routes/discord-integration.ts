@@ -377,6 +377,17 @@ const integrationRoutes: FastifyPluginAsync = async (app) => {
     return { maintenance: value };
   });
 
+  app.post("/audit", async (request, reply) => {
+    const parsed = actorSchema.extend({
+      action: z.string().trim().min(3).max(80),
+      targetDiscordId: snowflake,
+      details: z.record(z.unknown()).default({})
+    }).strict().safeParse(request.body);
+    if (!parsed.success) return reply.code(400).send({ error: "invalid_request" });
+    await writeAudit(parsed.data.actorDiscordId, parsed.data.actorUsername, parsed.data.action, parsed.data.targetDiscordId, parsed.data.details);
+    return reply.code(201).send({ recorded: true });
+  });
+
   app.get("/audit", async (request, reply) => {
     const parsed = z.object({ limit: z.coerce.number().int().min(1).max(100).default(25) }).safeParse(request.query);
     if (!parsed.success) return reply.code(400).send({ error: "invalid_query" });
