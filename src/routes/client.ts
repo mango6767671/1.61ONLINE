@@ -63,7 +63,7 @@ const clientRoutes: FastifyPluginAsync = async (app) => {
   app.get("/account", { preHandler: [app.authenticate] }, async (request, reply) => {
     const result = await pool.query<{
       id: string;
-      email: string;
+      email: string | null;
       created_at: Date;
       display_name: string | null;
       rank: number;
