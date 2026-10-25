@@ -3,7 +3,7 @@ import type { FastifyInstance } from "fastify";
 import { randomUUID } from "node:crypto";
 
 let app: FastifyInstance | undefined;
-let db: typeof import("../src/db/pool.js").pool;
+let db: typeof import("../src/db/pool.js").pool | undefined;
 let aliceId = "";
 let bobId = "";
 let charlieId = "";
