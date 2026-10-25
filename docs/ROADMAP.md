@@ -34,7 +34,23 @@ This roadmap describes current implementation state and planned work.
 - [ ] Matchmaking worker that groups players and assigns sessions
 - [ ] Abuse controls and load tests
 
-## Phase 3 — Client and real-time gameplay integration
+## Phase 3 — Discord community management
+
+- [x] Discord slash-command bot skeleton and deploy script
+- [x] Discord-native community signup and player profile lookup
+- [x] Backend health and community statistics commands
+- [x] Player search and public lobby listing
+- [x] Reports, feature suggestions, and private support tickets
+- [x] Admin stats, account lookup, community bans/unbans, and audit logs
+- [x] Announcement publishing/removal and API maintenance mode
+- [x] Discord role management with permission and hierarchy checks
+- [x] Docker Compose for PostgreSQL, API, and bot
+- [x] Backend and Discord integration API tests
+- [ ] Secure account-link flow for existing email/password accounts
+- [ ] Fine-grained per-command admin/moderator permissions and notification preferences
+- [ ] Ticket transcripts, attachments retention policy, and configurable service-level targets
+
+## Phase 4 — Client and real-time gameplay integration
 
 - [x] Documented community HTTP contract and current limitations
 - [x] Reference Windows/WinHTTP adapter source and CMake build target
