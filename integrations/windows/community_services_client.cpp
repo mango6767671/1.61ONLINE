@@ -122,6 +122,20 @@ HttpResult CommunityServicesClient::Login(
         "\",\"password\":\"" + JsonEscape(password) + "\"}");
 }
 
+HttpResult CommunityServicesClient::Refresh(const std::string& refreshToken) const {
+    return Request(L"POST", "/v1/auth/refresh",
+        "{\\"refreshToken\\":\\"" + JsonEscape(refreshToken) + "\\"}");
+}
+
+HttpResult CommunityServicesClient::Logout(const std::string& refreshToken) const {
+    return Request(L"POST", "/v1/auth/logout",
+        "{\\"refreshToken\\":\\"" + JsonEscape(refreshToken) + "\\"}");
+}
+
+HttpResult CommunityServicesClient::LogoutAll(const std::string& accessToken) const {
+    return Request(L"POST", "/v1/auth/logout-all", "{}", accessToken);
+}
+
 HttpResult CommunityServicesClient::CurrentAccount(const std::string& accessToken) const {
     return Request(L"GET", "/v1/client/account", {}, accessToken);
 }
