@@ -48,3 +48,12 @@ jobs:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/online_test
           JWT_SECRET: ci-only-secret-that-is-at-least-32-characters
           NODE_ENV: test
+
+  windows-adapter:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure Windows adapter
+        run: cmake -S integrations/windows -B build/community-services -A x64
+      - name: Compile Windows adapter
+        run: cmake --build build/community-services --config Release
